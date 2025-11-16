@@ -12,7 +12,7 @@ endif()
 project ("ChessEngine")
 include_directories("ChessEngine/include")
 # Add source to this project's executable.
-add_executable (ChessEngine "ChessEngine/src/Main.cpp" "ChessEngine/include/ChessDefinitions.h" "ChessEngine/include/Ultilities.h" "ChessEngine/include/UCI.h"  "ChessEngine/include/Game.h" "ChessEngine/src/Game.cpp")
+add_executable (ChessEngine "ChessEngine/src/Main.cpp" "ChessEngine/include/ChessDefinitions.h" "ChessEngine/include/Ultilities.h" "ChessEngine/include/UCI.h"  "ChessEngine/include/Game.h" "ChessEngine/src/Game.cpp" "ChessEngine/include/ZobristHash.h" "ChessEngine/src/ZobristHash.cpp" "ChessEngine/include/PSQT.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ChessEngine PROPERTY CXX_STANDARD 20)

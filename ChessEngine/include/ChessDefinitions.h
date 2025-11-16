@@ -6,28 +6,16 @@
 #include <sstream>
 #include <bit>
 #include <bitset>
+#include <cstdint>
+#include <array>
+#include <random>
+
+constexpr int MAX_MOVE = 256;
 
 //Define bitboard
 using u64 = unsigned long long;
 using ui = unsigned int;
 #define C64(constantU64) constantU64##ULL
-
-//Move
-struct Move {
-	ui from;
-	ui to;
-	Move() {
-		from = 0;
-		to = 0;
-	}
-
-	Move(const ui& from, const ui& to) {
-		this->from = from;
-		this->to = to;
-	}
-
-};
-
 
 //Pieces
 enum Piece : unsigned int {
@@ -37,8 +25,8 @@ enum Piece : unsigned int {
 };
 
 
-enum Color : bool {
-	White, Black
+enum Color : ui {
+	Black, White
 };
 
 

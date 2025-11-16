@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ChessDefinitions.h"
 
 namespace ChessEngine {
@@ -65,4 +65,12 @@ namespace ChessEngine {
         }
         std::cout << std::endl;
     }
+
+	int parseEnPassant(const std::string& fenField) {
+		if (fenField == "-") return 8;  // không có en passant
+
+		char fileChar = fenField[0]; // 'a'..'h'
+
+		return fileChar - 'a';  // 0..7
+	}
 }

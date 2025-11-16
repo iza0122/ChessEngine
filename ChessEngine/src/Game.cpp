@@ -20,11 +20,13 @@ ChessEngine::Board::Board()
 	for (size_t i = 0; i < 12; i++) {
 		pieces[i] = 0;
 	}
-	occupied = 0;
+	for (size_t i = 0; i < 64; i++) {
+		piecesList[i] = 0;
+	}
 }
 //rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 
-void ChessEngine::Board::setupFromFen(const Fen& fen)
+void ChessEngine::Board::initBitboardAndList(const Fen& fen)
 {
 	const std::string* boardData = fen.board;
 	int position = 0;
@@ -41,28 +43,80 @@ void ChessEngine::Board::setupFromFen(const Fen& fen)
 			{
 				switch (x)
 				{
-				case 'p': setBit(this->pieces[BlackPawn], position++); break;
-				case 'P': setBit(this->pieces[WhitePawn], position++); break;
-				case 'r': setBit(this->pieces[BlackRook], position++); break;
-				case 'R': setBit(this->pieces[WhiteRook], position++); break;
-				case 'n': setBit(this->pieces[BlackKnight], position++); break;
-				case 'N': setBit(this->pieces[WhiteKnight], position++); break;
-				case 'b': setBit(this->pieces[BlackBishop], position++); break;
-				case 'B': setBit(this->pieces[WhiteBishop], position++); break;
-				case 'q': setBit(this->pieces[BlackQueen], position++); break;
-				case 'Q': setBit(this->pieces[WhiteQueen], position++); break;
-				case 'k': setBit(this->pieces[BlackKing], position++); break;
-				case 'K': setBit(this->pieces[WhiteKing], position++); break;
-				default: position++; break;
+                case 'p': setBit(this->pieces[BlackPawn], position); piecesList[position++] = BlackPawn; break;
+                case 'P': setBit(this->pieces[WhitePawn], position); piecesList[position++] = WhitePawn; break;
+                case 'r': setBit(this->pieces[BlackRook], position); piecesList[position++] = BlackRook; break;
+                case 'R': setBit(this->pieces[WhiteRook], position); piecesList[position++] = WhiteRook; break;
+                case 'n': setBit(this->pieces[BlackKnight], position); piecesList[position++] = BlackKnight; break;
+                case 'N': setBit(this->pieces[WhiteKnight], position); piecesList[position++] = WhiteKnight; break;
+                case 'b': setBit(this->pieces[BlackBishop], position); piecesList[position++] = BlackBishop; break;
+                case 'B': setBit(this->pieces[WhiteBishop], position); piecesList[position++] = WhiteBishop; break;
+                case 'q': setBit(this->pieces[BlackQueen], position); piecesList[position++] = BlackQueen; break;
+                case 'Q': setBit(this->pieces[WhiteQueen], position); piecesList[position++] = WhiteQueen; break;
+                case 'k': setBit(this->pieces[BlackKing], position); piecesList[position++] = BlackKing; break;
+                case 'K': setBit(this->pieces[WhiteKing], position); piecesList[position++] = WhiteKing; break;
+                default: position++; break;
 				}
 			}
 		}
 	}
-	occupied = 0;
-	for (size_t i = 0; i < 12; i++)
-	{
-		occupied |= pieces[i];
+	
+}
+
+void ChessEngine::Board::initGameState(const Fen& fen)
+{
+	//Color
+	if (fen.whiteTurn == 'w') {
+		gameState.activeColor = White;
 	}
+	else {
+		gameState.activeColor = Black;
+	}
+
+	//Castling
+	if (fen.castling.find('K') != std::string::npos) gameState.castling |= 1;
+	if (fen.castling.find('Q') != std::string::npos) gameState.castling |= 2;
+	if (fen.castling.find('k') != std::string::npos) gameState.castling |= 4;
+	if (fen.castling.find('q') != std::string::npos) gameState.castling |= 8;
+	
+	//En Passant
+	gameState.enPassant = parseEnPassant(fen.enPassant);
+
+	//Move count
+	gameState.halfMove = fen.halfMove;
+	gameState.fullMove = fen.fullMove;
+
+	//Zobrist
+	gameState.zobristKey = computeZobrist();
+
+	////Phase Value
+	//gameState.phaseValue;
+	////PQST table
+	//gameState.psqtValue;
+}
+
+u64 ChessEngine::Board::computeZobrist()
+{
+	u64 key = 0;
+	for (int i = 0; i < 64; i++) {
+		int piece = piecesList[i];
+		if (piece != NoPiece) key ^= zobrist.pieces[piece][i];
+	}
+
+	if (gameState.enPassant < 8) {
+		key ^= zobrist.enPassant[gameState.enPassant];
+	}
+
+	if (gameState.castling & 1) key ^= zobrist.castlingRight[0]; // K
+	if (gameState.castling & 2) key ^= zobrist.castlingRight[1]; // Q
+	if (gameState.castling & 4) key ^= zobrist.castlingRight[2]; // k
+	if (gameState.castling & 8) key ^= zobrist.castlingRight[3]; // q
+
+	if (gameState.activeColor == Black) {
+		key ^= zobrist.sideToMove;
+	}
+
+	return key;
 }
 
 void ChessEngine::Board::printBoard() {
@@ -94,29 +148,13 @@ void ChessEngine::Board::printBoard() {
 	}
 
 	std::cout << "a b c d e f g h\n\n";
-	printBitboard(this->occupied);
 }
 
-bool ChessEngine::Game::LoadGame(const std::string& filename, const std::string& mode)
+
+ChessEngine::Move::Move()
 {
-	if (mode == "FEN") {
-		std::ifstream file(filename);
-		if (!file.is_open()) {
-			std::cerr << "Cannot open file!\n";
-			return false;
-		}
-
-		std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-		file.close();
-
-		Fen fen(content);
-		board.setupFromFen(fen);
-		whiteTurn = fen.whiteTurn;
-		castling = fen.castling;
-		enPassant = fen.enPassant;
-		halfMove = fen.halfMove;
-		fullMove = fen.fullMove;
-		return true;
-	}
-	return false;
+	flags = 0;
+	from = 0;
+	promotion = 0;
+	to = 0;
 }
