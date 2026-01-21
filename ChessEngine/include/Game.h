@@ -73,10 +73,14 @@ namespace ChessEngine {
 		GameState gameState;
 		History history;
 
+
+		Board(const Fen& fen);
+		u64 computeZobrist();
+		void printBoard();
+
+	private:
 		Board();
 		void initBitboardAndList(const Fen& fen);
 		void initGameState(const Fen& fen);
-		u64 computeZobrist();
-		void printBoard();
 	};
 }

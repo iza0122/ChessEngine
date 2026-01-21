@@ -24,6 +24,11 @@ ChessEngine::Board::Board()
 		piecesList[i] = 0;
 	}
 }
+
+ChessEngine::Board::Board(const Fen& fen) : Board() {
+	initBitboardAndList(fen);
+	initGameState(fen);
+}
 //rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 
 void ChessEngine::Board::initBitboardAndList(const Fen& fen)

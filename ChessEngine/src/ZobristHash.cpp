@@ -1,6 +1,8 @@
-#include "ZobristHash.h"
+﻿#include "ZobristHash.h"
 
-ChessEngine::Zobrist zobrist;
+namespace ChessEngine{
+	Zobrist zobrist; //Khởi tạo duy nhất 
+}
 
 ChessEngine::Zobrist::Zobrist()
 {
