@@ -15,20 +15,21 @@ ChessEngine::Fen::Fen(const std::string& FEN)
 }
 
 
-ChessEngine::Board::Board()
-{
+ChessEngine::Board::Board(const Fen& fen) {
 	for (size_t i = 0; i < 12; i++) {
-		pieces[i] = 0;
+		pieces[i] = NoPiece;
 	}
 	for (size_t i = 0; i < 64; i++) {
-		piecesList[i] = 0;
+		piecesList[i] = NoPiece;
 	}
+	initBitboardAndList(fen);
+
+	ply = 0;
+	st = &stateStack[0];
+
+	initStateFromFen(fen);
 }
 
-ChessEngine::Board::Board(const Fen& fen) : Board() {
-	initBitboardAndList(fen);
-	initGameState(fen);
-}
 //rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 
 void ChessEngine::Board::initBitboardAndList(const Fen& fen)
@@ -68,67 +69,72 @@ void ChessEngine::Board::initBitboardAndList(const Fen& fen)
 	
 }
 
-void ChessEngine::Board::initGameState(const Fen& fen)
+void ChessEngine::Board::initStateFromFen(const Fen& fen)
 {
-	//Color
-	if (fen.whiteTurn == 'w') {
-		gameState.activeColor = White;
-	}
-	else {
-		gameState.activeColor = Black;
-	}
+	StateInfo& s = stateStack[0];
 
-	//Castling
-	if (fen.castling.find('K') != std::string::npos) gameState.castling |= 1;
-	if (fen.castling.find('Q') != std::string::npos) gameState.castling |= 2;
-	if (fen.castling.find('k') != std::string::npos) gameState.castling |= 4;
-	if (fen.castling.find('q') != std::string::npos) gameState.castling |= 8;
-	
-	//En Passant
-	gameState.enPassant = parseEnPassant(fen.enPassant);
+	// Color
+	s.activeColor = (fen.whiteTurn == 'w') ? White : Black;
 
-	//Move count
-	gameState.halfMove = fen.halfMove;
-	gameState.fullMove = fen.fullMove;
+	// Castling
+	s.castling = 0;
+	if (fen.castling.find('K') != std::string::npos) s.castling |= 1;
+	if (fen.castling.find('Q') != std::string::npos) s.castling |= 2;
+	if (fen.castling.find('k') != std::string::npos) s.castling |= 4;
+	if (fen.castling.find('q') != std::string::npos) s.castling |= 8;
 
-	//Zobrist
-	gameState.zobristKey = computeZobrist();
+	// En passant
+	s.enPassant = parseEnPassant(fen.enPassant);
 
-	////Phase Value
-	//gameState.phaseValue;
-	////PQST table
-	//gameState.psqtValue;
+	// Move counters
+	s.halfMove = fen.halfMove;
+	s.fullMove = fen.fullMove;
+
+	// Zobrist
+	s.zobristKey = computeZobrist(s);
+
+	// Init others
+	s.phaseValue = 0;
+	s.psqtValue.fill(0);
+
+	s.previous = nullptr;
 }
 
-u64 ChessEngine::Board::computeZobrist()
+
+u64 ChessEngine::Board::computeZobrist(const StateInfo& s) const
 {
 	u64 key = 0;
-	for (int i = 0; i < 64; i++) {
-		int piece = piecesList[i];
-		if (piece != NoPiece) key ^= zobrist.pieces[piece][i];
+
+	// Pieces
+	for (int sq = 0; sq < 64; sq++) {
+		int piece = piecesList[sq];
+		if (piece != NoPiece)
+			key ^= zobrist.pieces[piece][sq];
 	}
 
-	if (gameState.enPassant < 8) {
-		key ^= zobrist.enPassant[gameState.enPassant];
-	}
+	// En passant (file only)
+	if (s.enPassant < 8)
+		key ^= zobrist.enPassant[s.enPassant];
 
-	if (gameState.castling & 1) key ^= zobrist.castlingRight[0]; // K
-	if (gameState.castling & 2) key ^= zobrist.castlingRight[1]; // Q
-	if (gameState.castling & 4) key ^= zobrist.castlingRight[2]; // k
-	if (gameState.castling & 8) key ^= zobrist.castlingRight[3]; // q
+	// Castling
+	if (s.castling & 1) key ^= zobrist.castlingRight[0];
+	if (s.castling & 2) key ^= zobrist.castlingRight[1];
+	if (s.castling & 4) key ^= zobrist.castlingRight[2];
+	if (s.castling & 8) key ^= zobrist.castlingRight[3];
 
-	if (gameState.activeColor == Black) {
+	// Side to move
+	if (s.activeColor == Black)
 		key ^= zobrist.sideToMove;
-	}
 
 	return key;
 }
 
+
 void ChessEngine::Board::printBoard() {
 	// Ký tự đại diện cho từng loại quân
-	const char pieceChar[12] = {
+	const char pieceChar[13] = {
 		'P', 'N', 'B', 'R', 'Q', 'K',   // White
-		'p', 'n', 'b', 'r', 'q', 'k'    // Black
+		'p', 'n', 'b', 'r', 'q', 'k' , '.'   // Black
 	};
 
 
@@ -137,14 +143,16 @@ void ChessEngine::Board::printBoard() {
 		for (int file = 0; file < 8; file++) {
 			int sq = rank * 8 + file;   // 0..63 index
 
-			char c = '.';  // ô trống
+			//char c = '?';  // ô trống
 
-			for (int i = 0; i < 12; i++) {
+			char c = pieceChar[piecesList[sq]];
+
+			/*for (int i = 0; i < 13; i++) {
 				if (pieces[i] & (1ULL << sq)) {
 					c = pieceChar[i];
 					break;
 				}
-			}
+			}*/
 
 			std::cout << c << ' ';
 		}
@@ -162,4 +170,23 @@ ChessEngine::Move::Move()
 	from = 0;
 	promotion = 0;
 	to = 0;
+}
+
+void ChessEngine::Board::doMove(const Move& m)
+{
+	StateInfo* newSt = &stateStack[++ply];
+
+	*newSt = *st;
+	newSt->previous = st;
+	st = newSt;
+
+	// apply move on pieces
+	// update enPassant, castling, halfMove...
+
+	st->zobristKey ^= zobrist.sideToMove;
+}
+
+void ChessEngine::Board::undoMove() {
+	st = st->previous;
+	--ply;
 }

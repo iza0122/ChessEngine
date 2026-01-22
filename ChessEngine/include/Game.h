@@ -27,8 +27,8 @@ namespace ChessEngine {
 		Move();
 	};
 
-	struct GameState {
-		ui activeColor; //Black = 0, White = 1
+	struct StateInfo {
+		ui activeColor;      // 0 = black, 1 = white
 		ui castling;
 		ui enPassant;
 		ui halfMove;
@@ -37,50 +37,28 @@ namespace ChessEngine {
 		u64 zobristKey;
 		ui phaseValue;
 		std::array<int, 12> psqtValue;
-		Move nextMove;
+
+		StateInfo* previous = nullptr;
 	};
-
-	struct History {
-		std::array<GameState, MAX_MOVE> history;
-		ui size = 0;
-		void push(const GameState& gamestate) {
-			history[size] = gamestate;
-			size++;
-		}
-
-		void pop() {
-			if (size == 0) return;
-			size--;
-		}
-
-		GameState& get_state(const ui& pos) {
-			return history[pos];
-		}
-
-		ui len() {
-			return size;
-		}
-
-		void clear() {
-			size = 0;
-		}
-	};
+	
 
 	struct Board {
 		u64 pieces[12];
-		ui piecesList[64]; //Pieces list
+		ui piecesList[64];
 
-		GameState gameState;
-		History history;
-
+		StateInfo* st;                              // current state
+		std::array<StateInfo, MAX_PLY> stateStack; // undo stack
+		ui ply = 0;
 
 		Board(const Fen& fen);
-		u64 computeZobrist();
-		void printBoard();
 
+		void doMove(const Move& m);
+		void undoMove();
+
+		u64 computeZobrist(const StateInfo& s) const;
+		void printBoard();
 	private:
-		Board();
 		void initBitboardAndList(const Fen& fen);
-		void initGameState(const Fen& fen);
+		void initStateFromFen(const Fen& fen);
 	};
 }

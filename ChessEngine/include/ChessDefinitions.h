@@ -10,7 +10,8 @@
 #include <array>
 #include <random>
 
-constexpr int MAX_MOVE = 256;
+constexpr int MAX_MOVE = 128;
+constexpr int MAX_PLY = 256;
 
 //Define bitboard
 using u64 = unsigned long long;
