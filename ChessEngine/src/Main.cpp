@@ -1,4 +1,4 @@
-﻿#include "Game.h";
+﻿#include "Board.h";
 using namespace ChessEngine;
 
 int main() {
@@ -11,5 +11,6 @@ int main() {
 	board->printBoard();
 	board->undoMove(ma);
 	board->printBoard();
+
 
 }

@@ -1,4 +1,4 @@
-﻿#include "Game.h"
+﻿#include "Board.h"
 #include "Ultilities.h"
 
 ChessEngine::Fen::Fen(const std::string& FEN)
