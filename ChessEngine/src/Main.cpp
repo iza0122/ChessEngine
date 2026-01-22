@@ -2,8 +2,11 @@
 using namespace ChessEngine;
 
 int main() {
-	Fen newGame("r2r1k2/ppR2Qp1/1q2pp1p/3p4/8/3P4/PP3PPP/2R3K1 b - - 1 24");
-	Board myGame(newGame);
-	myGame.printBoard();
-
+	Fen newGame("r1bqk2r/ppp1bppp/2np1n2/1B2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 2 6");
+	std::unique_ptr<Board> board;
+	board = std::make_unique<Board>(newGame);
+	board->printBoard();
+	Move ma(e1, g1, castling);
+	board->doMove(ma);
+	board->printBoard();
 }

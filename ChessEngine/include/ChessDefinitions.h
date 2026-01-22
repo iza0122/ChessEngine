@@ -53,6 +53,25 @@ enum enumSquare {
 	a8, b8, c8, d8, e8, f8, g8, h8
 };
 
+enum MoveFlag : ui {
+    quiet        = 0,
+    capture      = 1 << 0,
+    doublePush  = 1 << 1,
+    enPassant   = 1 << 2,
+    castling    = 1 << 3,
+    promotion   = 1 << 4
+};
+
+enum PromotionPiece : ui {
+    promoNone = 0,
+    promoKnight,
+    promoBishop,
+    promoRook,
+    promoQueen
+};
+
+
+
 //Bitboard constants
 
 constexpr u64 AFile = C64(0x0101010101010101);

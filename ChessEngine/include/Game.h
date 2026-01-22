@@ -2,7 +2,7 @@
 #include "ChessDefinitions.h"
 #include "ZobristHash.h"
 
-#define piecesNum 12
+constexpr int piecesNum = 12;
 
 
 namespace ChessEngine {
@@ -24,8 +24,15 @@ namespace ChessEngine {
 		ui promotion;  // loại quân khi phong cấp (0 = none)
 		ui flags;      // bit flags: capture, en passant, castling, ...
 
-		Move();
+		Move()
+			: from(0), to(0), promotion(promoNone), flags(quiet) {
+		}
+
+		Move(ui fromSq, ui toSq, ui moveFlags = quiet, ui promo = promoNone)
+			: from(fromSq), to(toSq), promotion(promo), flags(moveFlags) {
+		}
 	};
+
 
 	struct StateInfo {
 		ui activeColor;      // 0 = black, 1 = white
@@ -39,11 +46,13 @@ namespace ChessEngine {
 		std::array<int, 12> psqtValue;
 
 		StateInfo* previous = nullptr;
+
+		StateInfo();
 	};
 	
 
 	struct Board {
-		u64 pieces[12];
+		u64 pieces[13];
 		ui piecesList[64];
 
 		StateInfo* st;                              // current state
@@ -52,11 +61,11 @@ namespace ChessEngine {
 
 		Board(const Fen& fen);
 
-		void doMove(const Move& m);
+		void doMove(const Move& move);
 		void undoMove();
 
 		u64 computeZobrist(const StateInfo& s) const;
-		void printBoard();
+		void printBoard() const;
 	private:
 		void initBitboardAndList(const Fen& fen);
 		void initStateFromFen(const Fen& fen);

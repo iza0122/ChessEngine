@@ -1,4 +1,4 @@
-#include "Ultilities.h"
+﻿#include "Ultilities.h"
 #include <bit>
 #include <iostream>
 
@@ -64,8 +64,29 @@ namespace ChessEngine {
 
 	// ===== FEN =====
 	int parseEnPassant(const std::string& fenField) {
-		if (fenField == "-") return 8; // kh�ng c� en passant
-		return fenField[0] - 'a';      // 0..7
+		// Nếu FEN báo không có ô EnPassant, trả về 64 (NoSquare)
+		if (fenField == "-") return 64;
+
+		// FEN quy định ô EP phải có đủ 2 ký tự (ví dụ: "e3")
+		int file = fenField[0] - 'a'; // Cột a-h -> 0-7
+		int rank = fenField[1] - '1'; // Hàng 1-8 -> 0-7
+
+		// Trả về chỉ số ô từ 0-63
+		// Ví dụ: "e3" -> rank 2, file 4 -> 2 * 8 + 4 = 20
+		return rank * 8 + file;
+	}
+
+	ui promotePiece(ui pawn, ui promo)
+	{
+		bool isWhite = pawn <= WhiteKing;
+
+		switch (promo) {
+		case promoKnight: return isWhite ? WhiteKnight : BlackKnight;
+		case promoBishop: return isWhite ? WhiteBishop : BlackBishop;
+		case promoRook:   return isWhite ? WhiteRook : BlackRook;
+		case promoQueen:  return isWhite ? WhiteQueen : BlackQueen;
+		default: return pawn;
+		}
 	}
 
 }
