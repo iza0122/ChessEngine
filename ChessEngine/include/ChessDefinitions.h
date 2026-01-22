@@ -12,6 +12,7 @@
 
 constexpr int MAX_MOVE = 128;
 constexpr int MAX_PLY = 256;
+constexpr int MAX_MOVE_RULE = 100;
 
 //Define bitboard
 using u64 = unsigned long long;

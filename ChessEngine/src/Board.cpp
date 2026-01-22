@@ -153,6 +153,98 @@ void ChessEngine::Board::printBoard() const{
 	std::cout << "a b c d e f g h\n\n";
 }
 
+bool ChessEngine::Board::hasBishopPaired(const Color &side) const
+{
+    ui bishopType = (side == White) ? WhiteBishop : BlackBishop;
+    u64 bishopBB = pieces[bishopType];
+
+    return (bishopBB & DarkSquares) && (bishopBB & LightSquares);
+}
+
+bool ChessEngine::Board::sufficientMaterialToForceMate(Color& side) const
+{
+	if (pieces[WhitePawn] | pieces[BlackPawn] |
+		pieces[WhiteRook] | pieces[BlackRook] |
+		pieces[WhiteQueen] | pieces[BlackQueen])
+		return true;
+
+	// Bishop pair (khác màu)
+	if (hasBishopPaired(White) || hasBishopPaired(Black))
+		return true;
+
+	// Bishop + Knight
+	if ((pieces[WhiteBishop] && pieces[WhiteKnight]) ||
+		(pieces[BlackBishop] && pieces[BlackKnight]))
+		return true;
+
+	return false;
+}
+
+bool ChessEngine::Board::fiftyMoveRule() const
+{
+	return st->halfMove >= MAX_MOVE_RULE;
+}
+
+bool ChessEngine::Board::isDrawByRepetition() const {
+	int count = 0;
+	u64 key = st->zobristKey;
+
+	for (StateInfo* s = st; s != nullptr; s = s->previous) {
+		if (s->zobristKey == key) {
+			if (++count >= 3)
+				return true;
+		}
+
+		// Pawn move hoặc capture → không thể lặp trước đó
+		if (s->halfMove == 0)
+			break;
+	}
+
+	return false;
+}
+
+bool ChessEngine::Board::isDrawByInsufficientMaterial() const
+{
+	if (pieces[WhitePawn] || pieces[BlackPawn])  return false;
+	if (pieces[WhiteRook] || pieces[BlackRook])  return false;
+	if (pieces[WhiteQueen] || pieces[BlackQueen]) return false;
+
+	int wN = popcount(pieces[WhiteKnight]);
+	int bN = popcount(pieces[BlackKnight]);
+	int wB = popcount(pieces[WhiteBishop]);
+	int bB = popcount(pieces[BlackBishop]);
+
+	int totalMinors = wN + bN + wB + bB;
+
+	// K vs K
+	if (totalMinors == 0)
+		return true;
+
+	// K + 1 minor vs K
+	if (totalMinors == 1)
+		return true;
+
+	// K+B vs K+B (cùng màu ô)
+	if (totalMinors == 2 && wB == 1 && bB == 1) {
+		u64 wB = pieces[WhiteBishop];
+		u64 bB = pieces[BlackBishop];
+
+		// White bishop trên dark?
+		bool wDark = (wB & DarkSquares) != 0;
+		bool wLight = (wB & LightSquares) != 0;
+
+		// Black bishop trên dark?
+		bool bDark = (bB & DarkSquares) != 0;
+		bool bLight = (bB & LightSquares) != 0;
+
+		// Cùng màu ô
+		return (wDark && bDark) || (wLight && bLight);
+	}
+
+	return false;
+}
+
+
 
 void ChessEngine::Board::doMove(const Move& move)
 {

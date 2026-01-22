@@ -73,6 +73,12 @@ namespace ChessEngine {
 
 		u64 computeZobrist(const StateInfo& s) const;
 		void printBoard() const;
+
+		bool hasBishopPaired(const Color& side) const;
+		bool sufficientMaterialToForceMate(Color& side) const;
+		bool fiftyMoveRule() const;
+		bool isDrawByRepetition() const;
+		bool isDrawByInsufficientMaterial() const;
 	private:
 		void initBitboardAndList(const Fen& fen);
 		void initStateFromFen(const Fen& fen);
