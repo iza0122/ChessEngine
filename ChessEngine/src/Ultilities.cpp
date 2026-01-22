@@ -76,7 +76,7 @@ namespace ChessEngine {
 		return rank * 8 + file;
 	}
 
-	ui promotePiece(ui pawn, ui promo)
+	ui promotePiece(const ui &pawn,const ui &promo)
 	{
 		bool isWhite = pawn <= WhiteKing;
 
@@ -87,6 +87,20 @@ namespace ChessEngine {
 		case promoQueen:  return isWhite ? WhiteQueen : BlackQueen;
 		default: return pawn;
 		}
+	}
+
+	ui unpromotePiece(const ui &promotedPiece)
+	{
+		// White promotion
+		if (promotedPiece >= WhiteKnight && promotedPiece <= WhiteQueen)
+			return WhitePawn;
+
+		// Black promotion
+		if (promotedPiece >= BlackKnight && promotedPiece <= BlackQueen)
+			return BlackPawn;
+
+		// Không phải promotion (defensive)
+		return promotedPiece;
 	}
 
 }

@@ -35,11 +35,17 @@ namespace ChessEngine {
 
 
 	struct StateInfo {
-		ui activeColor;      // 0 = black, 1 = white
+		ui activeColor;
 		ui castling;
 		ui enPassant;
 		ui halfMove;
 		ui fullMove;
+
+		ui capturedPiece;
+		ui capturedSquare;
+
+		ui moveFlags;
+		ui promotedPiece;
 
 		u64 zobristKey;
 		ui phaseValue;
@@ -49,6 +55,7 @@ namespace ChessEngine {
 
 		StateInfo();
 	};
+
 	
 
 	struct Board {
@@ -62,7 +69,7 @@ namespace ChessEngine {
 		Board(const Fen& fen);
 
 		void doMove(const Move& move);
-		void undoMove();
+		void undoMove(const Move& move);
 
 		u64 computeZobrist(const StateInfo& s) const;
 		void printBoard() const;

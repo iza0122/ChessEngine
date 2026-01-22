@@ -165,84 +165,180 @@ void ChessEngine::Board::doMove(const Move& move)
 	ui from = move.from;
 	ui to = move.to;
 
+	st->moveFlags = move.flags;
+	st->promotedPiece = NoPiece;
+
 	ui movingPiece = piecesList[from];
 	ui capturedPiece = piecesList[to];
+	ui capturedSquare = to;
 
+	st->capturedPiece = NoPiece;
+	st->capturedSquare = 64;
+
+	// ===== Remove moving piece from FROM =====
 	piecesList[from] = NoPiece;
 	resetBit(pieces[movingPiece], from);
+	st->zobristKey ^= zobrist.pieces[movingPiece][from];
 
-	//Capture
+	// ===== Remove old en-passant =====
+	if (st->previous->enPassant != 64)
+		st->zobristKey ^= zobrist.enPassant[st->previous->enPassant % 8];
+
+	// ===== Remove old castling =====
+	st->zobristKey ^= zobrist.castlingRight[st->previous->castling];
+
+	// ===== Capture =====
 	if (move.flags & capture) {
-		//En-passant
 		if (move.flags & enPassant) {
-			ui capturedSquare = (st->activeColor == White) ? to - 8 : to + 8;
+			capturedSquare = (st->activeColor == White) ? to - 8 : to + 8;
 			capturedPiece = piecesList[capturedSquare];
-			piecesList[capturedSquare] = NoPiece;
-			resetBit(pieces[capturedPiece], capturedSquare);
 		}
-		else if (capturedPiece != NoPiece) {
-			resetBit(pieces[capturedPiece], to);
-		}
+
+		st->capturedPiece = capturedPiece;
+		st->capturedSquare = capturedSquare;
+
+		piecesList[capturedSquare] = NoPiece;
+		resetBit(pieces[capturedPiece], capturedSquare);
+		st->zobristKey ^= zobrist.pieces[capturedPiece][capturedSquare];
 	}
 
-	//Promotion
+	// ===== Promotion =====
 	if (move.flags & promotion) {
-		movingPiece = promotePiece(movingPiece, move.promotion);
+		st->promotedPiece = promotePiece(movingPiece, move.promotion);
+		movingPiece = st->promotedPiece;
 	}
 
-	//Castling
+	// ===== Castling =====
 	if (move.flags & castling) {
+		ui rookFrom, rookTo;
+
 		if (to == g1 || to == g8) {
-			ui rookFrom = to + 1;
-			ui rookTo = to - 1;
-			ui rook = piecesList[rookFrom];
-
-			piecesList[rookFrom] = NoPiece;
-			resetBit(pieces[rook], rookFrom);
-
-			piecesList[rookTo] = rook;
-			setBit(pieces[rook], rookTo);
+			rookFrom = to + 1;
+			rookTo = to - 1;
 		}
-		else if (to == c1 || to == c8) {
-			ui rookFrom = to - 2;
-			ui rookTo = to + 1;
-			ui rook = piecesList[rookFrom];
-
-			piecesList[rookFrom] = NoPiece;
-			resetBit(pieces[rook], rookFrom);
-
-			piecesList[rookTo] = rook;
-			setBit(pieces[rook], rookTo);
+		else {
+			rookFrom = to - 2;
+			rookTo = to + 1;
 		}
+
+		ui rook = piecesList[rookFrom];
+
+		piecesList[rookFrom] = NoPiece;
+		resetBit(pieces[rook], rookFrom);
+		st->zobristKey ^= zobrist.pieces[rook][rookFrom];
+
+		piecesList[rookTo] = rook;
+		setBit(pieces[rook], rookTo);
+		st->zobristKey ^= zobrist.pieces[rook][rookTo];
 	}
 
+	// ===== Place moving piece to TO =====
 	piecesList[to] = movingPiece;
-    setBit(pieces[movingPiece], to);
+	setBit(pieces[movingPiece], to);
+	st->zobristKey ^= zobrist.pieces[movingPiece][to];
 
-	st->enPassant = -1;
+	// ===== Update castling rights =====
+	st->castling &= castleMask[from];
+	st->castling &= castleMask[to];
+	st->zobristKey ^= zobrist.castlingRight[st->castling];
+
+	// ===== En-passant =====
+	st->enPassant = NoSquare;
 	if (move.flags & doublePush) {
 		st->enPassant = (from + to) / 2;
+		st->zobristKey ^= zobrist.enPassant[st->enPassant % 8];
 	}
 
+	// ===== Halfmove clock =====
+	if (move.flags & capture || movingPiece == WhitePawn || movingPiece == BlackPawn)
+		st->halfMove = 0;
+	else
+		st->halfMove++;
+
+	// ===== Side to move =====
 	st->activeColor ^= 1;
 	st->zobristKey ^= zobrist.sideToMove;
+
+	// ===== Fullmove =====
+	if (st->activeColor == White)
+		st->fullMove++;
 }
 
-void ChessEngine::Board::undoMove() {
-	st = st->previous;
-	--ply;
+
+void ChessEngine::Board::undoMove(const Move& move)
+{
+    StateInfo* cur = st;
+    st = st->previous;
+    ply--;
+
+    ui from = move.from;
+    ui to   = move.to;
+
+    ui movingPiece = piecesList[to];
+
+    // ===== Side to move =====
+    // (doMove đã flip, undo phải flip lại)
+    st->activeColor ^= 1;
+
+    // ===== Remove moving piece from TO =====
+    piecesList[to] = NoPiece;
+    resetBit(pieces[movingPiece], to);
+
+    // ===== Undo promotion =====
+    if (cur->moveFlags & promotion) {
+        movingPiece = unpromotePiece(movingPiece);
+    }
+
+    // ===== Place piece back to FROM =====
+    piecesList[from] = movingPiece;
+    setBit(pieces[movingPiece], from);
+
+    // ===== Undo castling =====
+    if (cur->moveFlags & castling) {
+        ui rookFrom, rookTo;
+
+        if (to == g1 || to == g8) {
+            rookFrom = to + 1;
+            rookTo   = to - 1;
+        } else {
+            rookFrom = to - 2;
+            rookTo   = to + 1;
+        }
+
+        ui rook = piecesList[rookTo];
+
+        piecesList[rookTo] = NoPiece;
+        resetBit(pieces[rook], rookTo);
+
+        piecesList[rookFrom] = rook;
+        setBit(pieces[rook], rookFrom);
+    }
+
+    // ===== Restore captured piece =====
+    if (cur->capturedPiece != NoPiece) {
+        piecesList[cur->capturedSquare] = cur->capturedPiece;
+        setBit(pieces[cur->capturedPiece], cur->capturedSquare);
+    }
+
+    // Zobrist, castling, en-passant, clocks
+    // đã được restore hoàn toàn bằng StateInfo
 }
 
 ChessEngine::StateInfo::StateInfo()
 	: activeColor(1)     // Mặc định White = 1
 	, castling(0)        // Mặc định không có quyền nhập thành
-	, enPassant(64)      // 64 nghĩa là không có ô EP (NoSquare)
+	, enPassant(NoSquare)      // 64 nghĩa là không có ô EP (NoSquare)
 	, halfMove(0)
 	, fullMove(1)
 	, zobristKey(0ULL)
 	, phaseValue(0)
 	, previous(nullptr)
+	, capturedPiece(NoPiece)
+	, capturedSquare(NoSquare)
+	, moveFlags(quiet)
+	, promotedPiece(promoNone)
 {
 	// Khởi tạo mảng PSQT về 0
 	psqtValue.fill(0);
 }
+

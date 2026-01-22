@@ -9,4 +9,7 @@ int main() {
 	Move ma(e1, g1, castling);
 	board->doMove(ma);
 	board->printBoard();
+	board->undoMove(ma);
+	board->printBoard();
+
 }

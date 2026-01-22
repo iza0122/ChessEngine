@@ -29,5 +29,6 @@ namespace ChessEngine {
 	// Debug / utils
 	void printBitboard(const u64& bitboard);
 	int parseEnPassant(const std::string& fenField);
-	ui promotePiece(ui pawn, ui promo);
+	ui promotePiece(const ui &pawn, const ui &promo);
+	ui unpromotePiece(const ui& promotedPiece);
 }
