@@ -26,9 +26,19 @@ enum Piece : unsigned int {
 	NoPiece
 };
 
+struct vector2D {
+	int x, y;
+	vector2D(int X = 0, int Y = 0) : x(X), y(Y) {}
+	vector2D operator+(const vector2D& other) const {
+		return vector2D(x + other.x, y + other.y);
+	}
+	vector2D operator-(const vector2D& other) const {
+		return vector2D(x - other.x, y - other.y);
+	}
+};
 
 enum Color : ui {
-	Black, White
+	Black = 0, White = 1
 };
 
 
@@ -89,12 +99,12 @@ constexpr u64 Border = C64(0xff818181818181ff);
 
 //Castle Mask
 const ui castleMask[64] = {
-	13, 15, 15, 15, 12, 15, 15, 14, // Hàng 1 (a1-h1): a1=13 (1101), e1=12 (1100), h1=14 (1110)
+	13, 15, 15, 15, 12, 15, 15, 14, // Hï¿½ng 1 (a1-h1): a1=13 (1101), e1=12 (1100), h1=14 (1110)
 	15, 15, 15, 15, 15, 15, 15, 15,
 	15, 15, 15, 15, 15, 15, 15, 15,
 	15, 15, 15, 15, 15, 15, 15, 15,
 	15, 15, 15, 15, 15, 15, 15, 15,
 	15, 15, 15, 15, 15, 15, 15, 15,
 	15, 15, 15, 15, 15, 15, 15, 15,
-	 7, 15, 15, 15,  3, 15, 15, 11  // Hàng 8 (a8-h8): a8=7 (0111), e8=3 (0011), h8=11 (1011)
+	 7, 15, 15, 15,  3, 15, 15, 11  // Hï¿½ng 8 (a8-h8): a8=7 (0111), e8=3 (0011), h8=11 (1011)
 };
