@@ -13,6 +13,7 @@ namespace ChessEngine {
 		AttackTable();
 	};
 
+    extern AttackTable Attack;
     void knightAttackTable(u64 (&KnightAttack)[64]);
     void pawnAttackTable(u64 (&PawnAttack)[2][64]);
     void kingAttackTable(u64 (&KingAttack)[64]);

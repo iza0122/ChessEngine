@@ -26,6 +26,8 @@ namespace ChessEngine
 
 namespace ChessEngine
 {
+    AttackTable Attack; //Bảng tra tấn công
+
     AttackTable::AttackTable()
     {
         rookAttackTable(rookAttack);
