@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for ChessEngine, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.10)
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -12,7 +12,7 @@ endif()
 project ("ChessEngine")
 include_directories("ChessEngine/include")
 # Add source to this project's executable.
-add_executable (ChessEngine "ChessEngine/src/Main.cpp" "ChessEngine/include/ChessDefinitions.h" "ChessEngine/include/Ultilities.h" "ChessEngine/include/UCI.h"  "ChessEngine/include/Board.h" "ChessEngine/src/Board.cpp" "ChessEngine/include/ZobristHash.h" "ChessEngine/src/ZobristHash.cpp" "ChessEngine/include/PSQT.h" "ChessEngine/src/Ultilities.cpp" "ChessEngine/src/Evaluator.cpp")
+add_executable (ChessEngine "ChessEngine/src/Main.cpp" "ChessEngine/include/ChessDefinitions.h" "ChessEngine/include/Ultilities.h" "ChessEngine/include/UCI.h"  "ChessEngine/include/Board.h" "ChessEngine/src/Board.cpp" "ChessEngine/include/ZobristHash.h" "ChessEngine/src/ZobristHash.cpp" "ChessEngine/include/PSQT.h" "ChessEngine/src/Ultilities.cpp" "ChessEngine/src/Evaluator.cpp" "ChessEngine/include/MoveGenerator.h" "ChessEngine/include/MagicBitboard.h" "ChessEngine/src/MagicBitboard.cpp" "ChessEngine/src/MoveGenerator.cpp" "ChessEngine/src/AttackTable.cpp" "ChessEngine/include/AttackTable.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ChessEngine PROPERTY CXX_STANDARD 20)
