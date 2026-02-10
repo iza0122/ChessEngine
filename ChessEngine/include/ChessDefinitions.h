@@ -10,7 +10,7 @@
 #include <array>
 #include <random>
 
-constexpr int MAX_MOVE = 128;
+constexpr int MAX_MOVES = 256; //Kích thước của danh sách nước
 constexpr int MAX_PLY = 256;
 constexpr int MAX_MOVE_RULE = 100;
 
